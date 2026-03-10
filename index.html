@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BAR IPTA — PAP Diogo</title>
+  <style>
+    :root {
+      --ipta-blue: #1E5AA8; --bg: #F5F9FF; --card: #FFFFFF;
+      --text: #0F172A; --muted: #64748B; --border: #E2E8F0;
+      --radius: 14px; --danger: #DC2626; --ok: #16A34A;
+    }
+
+    *{ box-sizing: border-box; }
+    body{ margin:0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    header{ background: white; padding: 15px; border-bottom: 1px solid var(--border); position: sticky; top:0; z-index:10; }
+    main{ max-width: 1200px; margin: 20px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
+    .card { background: var(--card); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    
+    /* GRELHA DE PRODUTOS */
+    .pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+    .product-btn { 
+      background: #fff; border: 2px solid var(--border); border-radius: var(--radius); 
+      padding: 12px; text-align: center; cursor: pointer; transition: 0.2s;
+      display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 180px;
+    }
+    .product-btn:hover { border-color: var(--ipta-blue); transform: translateY(-3px); }
+    .product-btn img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; pointer-events: none; }
+    .product-btn span { pointer-events: none; font-weight: 600; font-size: 13px; }
+    .product-btn .price { color: var(--ipta-blue); background: #eef6ff; padding: 2px 8px; border-radius: 6px; margin-top: 5px; }
+
+    /* CARRINHO */
+    .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; }
+    .btn-remove { background: #fee2e2; color: #991b1b; border: none; border-radius: 4px; width: 24px; height: 24px; cursor: pointer; font-weight: bold; }
+    .total-val { font-size: 32px; font-weight: 800; color: var(--ipta-blue); text-align: center; margin: 15px 0; }
+    .btn-main { width: 100%; background: var(--ipta-blue); color: white; border: none; padding: 18px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 16px; }
+
+    /* MODAL DE PAGAMENTO */
+    #modal-pagamento {
+      display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+      background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center;
+    }
+    .modal-content { background: white; padding: 30px; border-radius: 20px; width: 400px; text-align: center; }
+    .metodos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
+    .method-btn {
+      padding: 25px; border: 2px solid var(--border); border-radius: 12px; cursor: pointer;
+      font-weight: bold; transition: 0.2s; font-size: 16px;
+    }
+    .method-btn:hover { border-color: var(--ipta-blue); background: #f0f7ff; color: var(--ipta-blue); }
+
+    /* TABELAS */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+<div id="modal-pagamento">
+  <div class="modal-content">
+    <h2 style="margin:0;">Escolha o Pagamento</h2>
+    <p style="color:var(--muted); font-size: 18px;">Total: <b id="modal-total-txt">0.00€</b></p>
+    
+    <div class="metodos-grid">
+      <div class="method-btn" onclick="confirmarVenda('Dinheiro')">💵 DINHEIRO</div>
+      <div class="method-btn" onclick="confirmarVenda('Cartão')">💳 CARTÃO</div>
+    </div>
+    
+    <button onclick="fecharModal()" style="margin-top:25px; background:none; border:none; color:var(--muted); cursor:pointer;">Cancelar</button>
+  </div>
+</div>
+
+<header>
+  <div style="max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <h1 style="font-size:18px; margin:0; color:var(--ipta-blue);">BAR IPTA — GESTÃO</h1>
+      <small>PAP Diogo - Sistema POS Completo</small>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="card">
+      <h3>Produtos</h3>
+      <div class="pos-grid">
+        <div class="product-btn" onclick="adicionar('Água 0.5L', 0.80, 'Agua')">
+          <img src="agua.jpg" onerror="this.src='https://placehold.co/80x80?text=Agua'">
+          <span>Água 0.5L</span><span class="price">0.80€</span>
+        </div>
+        <div class="product-btn" onclick="adicionar('Sumo Laranja', 1.20, 'Sumo')">
+          <img src="sumo.jpg" onerror="this.src='https://placehold.co/80x80?text=Sumo'">
+          <span>Sumo Laranja</span><span class="price">1.20€</span>
+        </div>
+        <div class="product-btn" onclick="adicionar('Coca-Cola', 1.30, 'Coca')">
+          <img src="cocacola.jpg" onerror="this.src='https://placehold.co/80x80?text=Coca'">
+          <span>Coca-Cola</span><span class="price">1.30€</span>
+        </div>
+        <div class="product-btn" onclick="adicionar('Iogurte Líq.', 0.95, 'Iogurte')">
+          <img src="iogurte.jpg" onerror="this.src='https://placehold.co/80x80?text=Iogurte'">
+          <span>Iogurte Líq.</span><span class="price">0.95€</span>
+        </div>
+        <div class="product-btn" onclick="adicionar('Café', 0.65, 'Cafe')">
+          <img src="cafe.jpg" onerror="this.src='https://placehold.co/80x80?text=Cafe'">
+          <span>Café</span><span class="price">0.65€</span>
+        </div>
+        <div class="product-btn" onclick="adicionar('Pão Queijo', 1.50, 'PaoQueijo')">
+          <img src="paoqueijo.jpg" onerror="this.src='https://placehold.co/80x80?text=Pao'">
+          <span>Pão Queijo</span><span class="price">1.50€</span>
+        </div>
+        <div class="product-btn" onclick="adicionar('Sandes Mista', 2.10, 'Sandes')">
+          <img src="sandes.jpg" onerror="this.src='https://placehold.co/80x80?text=Sandes'">
+          <span>Sandes Mista</span><span class="price">2.10€</span>
+        </div>
+        <div class="product-btn" onclick="adicionar('Croissant', 1.80, 'Croissant')">
+          <img src="croissant.jpg" onerror="this.src='https://placehold.co/80x80?text=Choc'">
+          <span>Croissant</span><span class="price">1.80€</span>
+        </div>
+        <div class="product-btn" onclick="adicionar('Batatas Fritas', 1.00, 'Batatas Fritas')">
+          <img src="batatas fritas.jpg" onerror="this.src='https://placehold.co/80x80?text=Batatas fritas'">
+          <span>Batatas Fritas</span><span class="price">1.00€</span>
+        </div>
+        <div class="product-btn" onclick="adicionar('Pastel Nata', 1.10, 'Pastel')">
+          <img src="pastelnata.jpg" onerror="this.src='https://placehold.co/80x80?text=Nata'">
+          <span>Pastel Nata</span><span class="price">1.10€</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Stock Atual</h3>
+      <table>
+        <thead><tr><th>Produto</th><th>Categoria</th><th>Stock</th></tr></thead>
+        <tbody id="corpo-stock"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Vendas Recentes</h3>
+      <table id="tabela-historico">
+        <thead><tr><th>Hora</th><th>Produtos</th><th>Total</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <aside>
+    <div class="card" style="position: sticky; top: 90px;">
+      <h3>Carrinho</h3>
+      <div id="lista-carrinho" style="min-height: 100px;">
+        <p style="text-align:center; color:var(--muted);">Selecione produtos...</p>
+      </div>
+      <div class="total-val" id="total-txt">0.00€</div>
+      <button class="btn-main" onclick="abrirModalPagamento()">FINALIZAR COMPRA</button>
+      <button onclick="limparTudo()" style="width:100%; border:none; background:none; color:var(--muted); margin-top:10px; cursor:pointer;">Limpar Carrinho</button>
+    </div>
+  </aside>
+</main>
+
+<script>
+  let stocks = {
+    'Agua': { n: 'Água 0.5L', c: 'Bebidas', q: 20 },
+    'Sumo': { n: 'Sumo Laranja', c: 'Bebidas', q: 12 },
+    'Coca': { n: 'Coca-Cola', c: 'Bebidas', q: 15 },
+    'Iogurte': { n: 'Iogurte Líq.', c: 'Bebidas', q: 10 },
+    'Cafe': { n: 'Café', c: 'Café', q: 30 },
+    'PaoQueijo': { n: 'Pão Queijo', c: 'Snacks', q: 15 },
+    'Sandes': { n: 'Sandes Mista', c: 'Snacks', q: 10 },
+    'Croissant': { n: 'Croissant', c: 'Snacks', q: 8 },
+    'Batatas Fritas': { n: 'Batatas Fritas', c: 'Snacks', q: 20 },
+    'Pastel': { n: 'Pastel Nata', c: 'Snacks', q: 12 }
+  };
+
+  let carrinho = [];
+  let total = 0;
+  let historico = JSON.parse(localStorage.getItem('hist_diogo')) || [];
+
+  window.onload = () => { renderStock(); renderHistorico(); };
+
+  function adicionar(nome, preco, id) {
+    carrinho.push({ nome, preco, id });
+    renderCarrinho();
+  }
+
+  function remover(index) {
+    carrinho.splice(index, 1);
+    renderCarrinho();
+  }
+
+  function renderCarrinho() {
+    total = 0;
+    const lista = document.getElementById('lista-carrinho');
+    if (carrinho.length === 0) {
+      lista.innerHTML = '<p style="text-align:center; color:var(--muted);">Selecione produtos...</p>';
+    } else {
+      lista.innerHTML = carrinho.map((item, i) => {
+        total += item.preco;
+        return `<div class="cart-item">
+                  <span><button class="btn-remove" onclick="remover(${i})">x</button> ${item.nome}</span>
+                  <b>${item.preco.toFixed(2)}€</b>
+                </div>`;
+      }).join('');
+    }
+    document.getElementById('total-txt').innerText = total.toFixed(2) + "€";
+  }
+
+  function abrirModalPagamento() {
+    if (carrinho.length === 0) return;
+    document.getElementById('modal-total-txt').innerText = total.toFixed(2) + "€";
+    document.getElementById('modal-pagamento').style.display = 'flex';
+  }
+
+  function fecharModal() {
+    document.getElementById('modal-pagamento').style.display = 'none';
+  }
+
+  function confirmarVenda(metodo) {
+    fecharModal();
+    
+    // 1. GERAR TALÃO NA JANELA POPUP
+    const win = window.open('', '', 'height=600,width=400');
+    win.document.write('<html><body style="font-family:monospace; padding:20px;">');
+    win.document.write('<h2 style="text-align:center;">BAR IPTA</h2>');
+    win.document.write('<hr>');
+    carrinho.forEach(i => {
+      win.document.write('<div style="display:flex; justify-content:space-between;"><span>'+i.nome+'</span><span>'+i.preco.toFixed(2)+'€</span></div>');
+    });
+    win.document.write('<hr>');
+    win.document.write('<p>PAGAMENTO: ' + metodo + '</p>');
+    win.document.write('<h3>TOTAL: ' + total.toFixed(2) + '€</h3>');
+    win.document.write('<p style="text-align:center;">Obrigado!</p>');
+    win.document.write('</body></html>');
+    win.document.close();
+    win.print();
+    win.close();
+
+    // 2. ABATER STOCK
+    carrinho.forEach(item => { if(stocks[item.id]) stocks[item.id].q--; });
+
+    // 3. HISTÓRICO
+    const hora = new Date().toLocaleTimeString('pt-PT', {hour:'2-digit', minute:'2-digit'});
+    historico.unshift({ hora, itens: carrinho.map(i=>i.nome).join(', '), total: total.toFixed(2)+'€' });
+    localStorage.setItem('hist_diogo', JSON.stringify(historico));
+
+    // 4. RESET
+    carrinho = [];
+    renderCarrinho();
+    renderStock();
+    renderHistorico();
+    alert("Venda concluída com sucesso!");
+  }
+
+  function renderStock() {
+    document.getElementById('corpo-stock').innerHTML = Object.keys(stocks).map(id => `
+      <tr>
+        <td>${stocks[id].n}</td>
+        <td>${stocks[id].c}</td>
+        <td><b>${stocks[id].q}</b></td>
+      </tr>
+    `).join('');
+  }
+
+  function renderHistorico() {
+    document.querySelector('#tabela-historico tbody').innerHTML = historico.slice(0,5).map(h => `
+      <tr><td>${h.hora}</td><td>${h.itens}</td><td style="color:var(--ipta-blue); font-weight:bold">${h.total}</td></tr>
+    `).join('');
+  }
+
+  function limparTudo() { carrinho = []; renderCarrinho(); }
+</script>
+
+</body>
+</html>
